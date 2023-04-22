@@ -101,6 +101,7 @@ void exclusive_scan(int* input, int N, int* result)
         int blocks = N/two_dplus1/512;
         scan_kernal_down<<<blocks, threadsPerBlock>>>(N, two_d, input);
     }
+    printf("0th: %d\n",input[0]);
 
 }
 
