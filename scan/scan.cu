@@ -31,9 +31,10 @@ static inline int nextPow2(int n) {
 __global__ void scan_kernal_up(int N, int offset, int* input) {
     
   int index = blockIdx.x * blockDim.x + threadIdx.x;
+  int two_times = 2 * offset;
 
-  if (index < N){
-    input[(index+1)*offset*2 -1] += input[index*offset*2 + offset -1];
+  if ((index+1)*two_times -1 < N){
+    input[(index+1)*two_times -1] += input[index*two_times + offset -1];
   }
 
 }
@@ -41,15 +42,17 @@ __global__ void scan_kernal_up(int N, int offset, int* input) {
 __global__ void scan_kernal_down(int N, int offset, int* input) {
     
   int index = blockIdx.x * blockDim.x + threadIdx.x;
+  int two_times = 2 * offset;
+
   if(offset == N/2){
     input[N-1] = 0;
   }
 
-  if (index < N){
+  if ((index+1) * two_times -1 < N){
     // input[(index+1)*offset -1] += input[index*offset + offset/2 -1];
-    int t = input[index * offset *2 + offset -1];
-    input[index * offset *2 + offset -1] = input[(index+1) * offset * 2-1];
-    input[(index+1) * offset * 2 -1] += t;
+    int t = input[index * two_times + offset -1];
+    input[index * two_times + offset -1] = input[(index+1) * two_times -1];
+    input[(index+1) * two_times -1] += t;
 
   }
 
