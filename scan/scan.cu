@@ -84,8 +84,12 @@ void exclusive_scan(int* input, int N, int* result)
 
     for (int two_d = 1; two_d <= N/2; two_d*=2) {
         int two_dplus1 = 2*two_d;
-        int threadsPerBlock = 512;
-        int blocks = N/two_dplus1/512;
+        int threadsPerBlock = 32;
+        int blocks = 1;
+        if (N/two_dplus1 > 32){
+          blocks = N/two_dplus1/32;
+        }
+
         // parallel_for (int i = 0; i < N; i += two_dplus1) {
         //     output[i+two_dplus1-1] += output[i+two_d-1];
         // }
@@ -97,8 +101,11 @@ void exclusive_scan(int* input, int N, int* result)
     // downsweep phase
     for (int two_d = N/2; two_d >= 1; two_d /= 2) {
         int two_dplus1 = 2*two_d;
-        int threadsPerBlock = 512;
-        int blocks = N/two_dplus1/512;
+        int threadsPerBlock = 32;
+        int blocks = 1;
+        if (N/two_dplus1 > 32){
+          blocks = N/two_dplus1/32;
+        }
         scan_kernal_down<<<blocks, threadsPerBlock>>>(N, two_d, result);
     }
 
