@@ -28,7 +28,7 @@ static inline int nextPow2(int n) {
 }
 
 // scan_kernal
-__global__ void scan_kernal_up(int N, int offset, int *input) {
+__global__ void scan_kernal_up(int N, int offset, int* input) {
     
   int index = blockIdx.x * blockDim.x + threadIdx.x;
 
@@ -38,7 +38,7 @@ __global__ void scan_kernal_up(int N, int offset, int *input) {
 
 }
 
-__global__ void scan_kernal_down(int N, int offset, int *input) {
+__global__ void scan_kernal_down(int N, int offset, int* input) {
     
   int index = blockIdx.x * blockDim.x + threadIdx.x;
   if(offset == N/2){
@@ -196,6 +196,20 @@ double cudaScanThrust(int* inarray, int* end, int* resultarray) {
 }
 
 
+// repeat_kernal
+__global__ void repeat_kernal(int N, int* input, int* count, int* output) {
+    
+  int index = blockIdx.x * blockDim.x + threadIdx.x;
+
+  if (index < N-1 ){
+      if ((input[index + 1] - input[index]) == (input[index + 2] - input[index+1])){
+          output[*count] = index;
+          atomicAdd(count, 1);
+      }
+  }
+
+}
+
 // find_repeats --
 //
 // Given an array of integers `device_input`, returns an array of all
@@ -215,8 +229,23 @@ int find_repeats(int* device_input, int length, int* device_output) {
     // exclusive_scan function with them. However, your implementation
     // must ensure that the results of find_repeats are correct given
     // the actual array length.
+    int count = 0;
+    int N = nextPow2(length);
+    int* device_result; // for storing the result of cudaScan
+    int* device_count; // for repeat_kernal counter
 
-    return 0; 
+    cudaMalloc(&device_result, sizeof(int) * N);
+    cudaMemcpy(device_result, device_input, sizeof(int) * N, cudaMemcpyDeviceToDevice);
+    cudaMalloc(&device_count, sizeof(int));
+    cudaMemcpy(device_count, &count, sizeof(int), cudaMemcpyHostToDevice);
+
+    exclusive_scan(device_input, N, device_result);
+    repeat_kernal<<<1,N>>>(N, device_result, device_count, device_output);
+
+    cudaMemcpy(&count, device_count, sizeof(int), cudaMemcpyDeviceToDevice);
+    cudaFree(device_result);
+    cudaFree(device_count);
+    return count;
 }
 
 
