@@ -9,8 +9,7 @@
 ## Overview ##
 
 In this assignment you will write a parallel renderer in CUDA that draws colored circles. 
-While this renderer is very simple, parallelizing the renderer will require you to design and implement data structures 
-that can be efficiently constructed and manipulated in parallel. This is a challenging
+While this renderer is very simple, parallelizing the renderer will require you to design and implement data structures that can be efficiently constructed and manipulated in parallel. This is a challenging
 assignment so you are advised to start early. __Seriously, you are advised to start early.__ Good luck!
 
 ## Environment Setup ##
