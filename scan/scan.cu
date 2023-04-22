@@ -73,6 +73,7 @@ __global__ void scan_kernal_down(int N, int offset, int *input) {
 void exclusive_scan(int* input, int N, int* result)
 {
 
+    N = nextPow2(N);
     // CS149 TODO:
     //
     // Implement your exclusive scan implementation here.  Keep input
