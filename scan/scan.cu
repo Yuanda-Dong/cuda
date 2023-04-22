@@ -93,7 +93,6 @@ void exclusive_scan(int* input, int N, int* result)
 
     }
 
-    input[N-1] = 0;
 
     // downsweep phase
     for (int two_d = N/2; two_d >= 1; two_d /= 2) {
