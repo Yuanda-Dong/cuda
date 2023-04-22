@@ -27,6 +27,34 @@ static inline int nextPow2(int n) {
     return n;
 }
 
+// scan_kernal
+__global__ void scan_kernal_up(int N, int offset, int *input) {
+    
+  int index = blockIdx.x * blockDim.x + threadIdx.x;
+
+  if (index < N){
+    input[(index+1)*offset*2 -1] += input[index*offset*2 + offset -1];
+  }
+
+}
+
+__global__ void scan_kernal_down(int N, int offset, int *input) {
+    
+  int index = blockIdx.x * blockDim.x + threadIdx.x;
+  if(offset == N/2){
+    input[N-1] = 0;
+  }
+
+  if (index < N){
+    // input[(index+1)*offset -1] += input[index*offset + offset/2 -1];
+    int t = input[index * offset *2 + offset -1];
+    input[index * offset *2 + offset -1] = input[(index+1) * offset * 2-1];
+    input[(index+1) * offset * 2 -1] += t;
+
+  }
+
+}
+
 // exclusive_scan --
 //
 // Implementation of an exclusive scan on global memory array `input`,
@@ -53,7 +81,25 @@ void exclusive_scan(int* input, int N, int* result)
     // on the CPU.  Your implementation will need to make multiple calls
     // to CUDA kernel functions (that you must write) to implement the
     // scan.
+    const int threadsPerBlock = 512;
+    const int blocks = (N + threadsPerBlock - 1) / threadsPerBlock;
 
+    for (int two_d = 1; two_d <= N/2; two_d*=2) {
+        int two_dplus1 = 2*two_d;
+        // parallel_for (int i = 0; i < N; i += two_dplus1) {
+        //     output[i+two_dplus1-1] += output[i+two_d-1];
+        // }
+        scan_kernal_up<<<blocks, threadsPerBlock>>>(N, two_d, input);
+
+    }
+
+    input[N-1] = 0;
+
+    // downsweep phase
+    for (int two_d = N/2; two_d >= 1; two_d /= 2) {
+        int two_dplus1 = 2*two_d;
+        scan_kernal_down<<<blocks, threadsPerBlock>>>(N, two_d, input);
+    }
 
 }
 
