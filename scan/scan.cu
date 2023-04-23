@@ -94,6 +94,7 @@ void exclusive_scan(int* input, int N, int* result)
 {
 
     N = nextPow2(N);
+    printf("N: %d\n", N);
     int threadsPerBlock = 32;
     // CS149 TODO:
     //
