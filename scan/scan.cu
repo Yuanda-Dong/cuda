@@ -212,8 +212,8 @@ __global__ void repeat_kernal(int N, int *input, int *count, int *output) {
 
     if (index < N - 1) {
         if ((input[index + 1] - input[index]) == (input[index + 2] - input[index + 1])) {
-            output[*count] = index;
-            atomicAdd(count, 1);
+            int prev = atomicAdd(count, 1);
+            output[prev] = index;
         }
     }
 }
