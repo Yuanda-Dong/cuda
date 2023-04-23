@@ -49,11 +49,11 @@ __global__ void scan_kernal_up(int N, int offset, int* input) {
     
   int index = blockIdx.x * blockDim.x + threadIdx.x;
   int two_times = 2 * offset;
-
-  if (((index+1)*two_times -1) < N && (index*two_times + offset -1) < N){
-    input[(index+1)*two_times -1] += input[index*two_times + offset -1];
+  int a = (index+1)*two_times -1;
+  int b = index*two_times + offset -1;
+  if (a < N && b < N){
+    input[a] += input[b];
   }
-
 }
 
 __global__ void scan_kernal_down(int N, int offset, int* input) {
@@ -64,14 +64,13 @@ __global__ void scan_kernal_down(int N, int offset, int* input) {
   if(offset == N/2){
     input[N-1] = 0;
   }
-
-  if (((index+1) * two_times -1) < N && (index * two_times + offset -1) < N){
-    int t = input[index * two_times + offset -1];
-    input[index * two_times + offset -1] = input[(index+1) * two_times -1];
-    input[(index+1) * two_times -1] += t;
-
+  int a = (index+1) * two_times -1;
+  int b = index * two_times + offset -1;
+  if (a < N && b < N){
+    int t = input[b];
+    input[b] = input[a];
+    input[a] += t;
   }
-
 }
 
 // exclusive_scan --
