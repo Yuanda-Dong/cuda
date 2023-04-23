@@ -249,7 +249,7 @@ int find_repeats(int *device_input, int length, int *device_output) {
     cudaMemcpy(device_count, &count, sizeof(int), cudaMemcpyHostToDevice);
 
     exclusive_scan(device_input, N_round, device_result);
-    repeat_kernal<<<N_round/128, 128>>>(N, device_result, device_count, device_output);
+    repeat_kernal<<<N_round/128, 128>>>(length, device_result, device_count, device_output);
     // cudaCheckError( cudaDeviceSynchronize() ); // error is printed on this line
 
     cudaMemcpy(&count, device_count, sizeof(int), cudaMemcpyDeviceToHost);
