@@ -224,7 +224,7 @@ __global__ void repeat_kernal(int N, int *input, int *count, int *output) {
 // indices `i` for which `device_input[i] == device_input[i+1]`.
 //
 // Returns the total number of pairs found
-int find_repeats(int *device_input, int length, int *device_output) {
+int find_repeats(int* device_input, int length, int* device_output) {
 
     // CS149 TODO:
     //
@@ -252,7 +252,7 @@ int find_repeats(int *device_input, int length, int *device_output) {
     // cudaCheckError( cudaDeviceSynchronize() ); // error is printed on this line
     cudaMemcpy(&count, device_count, sizeof(int), cudaMemcpyDeviceToHost);
     thrust::device_ptr<int> dev_ptr(device_output);
-    thrust::sort(dev_ptr, count);
+    thrust::sort(dev_ptr, dev_ptr + count);
     cudaFree(device_result);
     cudaFree(device_count);
     return count;
