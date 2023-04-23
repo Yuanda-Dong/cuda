@@ -255,6 +255,7 @@ int find_repeats(int *device_input, int length, int *device_output) {
     cudaMemcpy(&count, device_count, sizeof(int), cudaMemcpyDeviceToHost);
     cudaFree(device_result);
     cudaFree(device_count);
+    printf("count: %d\n", count);
     return count;
 }
 
