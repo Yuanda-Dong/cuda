@@ -65,7 +65,7 @@ __global__ void scan_kernal_down(int N, int offset, int* input) {
     input[N-1] = 0;
   }
 
-  if ((index+1) * two_times -1 < N){
+  if (((index+1) * two_times -1) < N){
     // input[(index+1)*offset -1] += input[index*offset + offset/2 -1];
     int t = input[index * two_times + offset -1];
     input[index * two_times + offset -1] = input[(index+1) * two_times -1];
