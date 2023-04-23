@@ -110,6 +110,7 @@ void exclusive_scan(int *input, int N, int *result) {
             threadsPerBlock = N/two_dplus1;
             blocks = 1;
         }
+        printf("%d blocks with %d threads\n", blocks,threadsPerBlock);
 
         // parallel_for (int i = 0; i < N; i += two_dplus1) {
         //     output[i+two_dplus1-1] += output[i+two_d-1];
