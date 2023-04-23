@@ -9,7 +9,7 @@
 #include <thrust/device_malloc.h>
 #include <thrust/device_ptr.h>
 #include <thrust/scan.h>
-
+#include <thrust/sort.h>
 #include "CycleTimer.h"
 
 #define THREADS_PER_BLOCK 256
@@ -212,7 +212,6 @@ __global__ void repeat_kernal(int N, int *input, int *count, int *output) {
 
     if (index < N - 1) {
         if ((input[index + 1] - input[index]) == (input[index + 2] - input[index + 1])) {
-            printf("xd");
             output[*count] = index;
             atomicAdd(count, 1);
         }
@@ -251,11 +250,11 @@ int find_repeats(int *device_input, int length, int *device_output) {
     exclusive_scan(device_input, N_round, device_result);
     repeat_kernal<<<N_round/128, 128>>>(length, device_result, device_count, device_output);
     // cudaCheckError( cudaDeviceSynchronize() ); // error is printed on this line
-
     cudaMemcpy(&count, device_count, sizeof(int), cudaMemcpyDeviceToHost);
+    thrust::device_ptr<int> dev_ptr(device_output);
+    thrust::sort(dev_ptr, count);
     cudaFree(device_result);
     cudaFree(device_count);
-    printf("count: %d\n", count);
     return count;
 }
 
