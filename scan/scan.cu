@@ -89,7 +89,6 @@ __global__ void scan_kernal_down(int N, int offset, int *input) {
 void exclusive_scan(int *input, int N, int *result) {
 
     N = nextPow2(N);
-    printf("N: %d\n", N);
     int threadsPerBlock;
     int blocks;
     // CS149 TODO:
@@ -110,14 +109,7 @@ void exclusive_scan(int *input, int N, int *result) {
             threadsPerBlock = N/two_dplus1;
             blocks = 1;
         }
-        printf("%d blocks with %d threads\n", blocks,threadsPerBlock);
-
-        // parallel_for (int i = 0; i < N; i += two_dplus1) {
-        //     output[i+two_dplus1-1] += output[i+two_d-1];
-        // }
         scan_kernal_up<<<blocks, threadsPerBlock>>>(N, two_d, result);
-
-        cudaCheckError(cudaDeviceSynchronize()); // error is printed on this line
     }
 
     // downsweep phase
@@ -131,8 +123,6 @@ void exclusive_scan(int *input, int N, int *result) {
             blocks = 1;
         }
         scan_kernal_down<<<blocks, threadsPerBlock>>>(N, two_d, result);
-
-        cudaCheckError(cudaDeviceSynchronize()); // error is printed on this line
     }
 }
 
