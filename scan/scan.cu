@@ -104,8 +104,8 @@ void exclusive_scan(int *input, int N, int *result) {
     for (int two_d = 1; two_d <= N / 2; two_d *= 2) {
         int two_dplus1 = 2 * two_d;
         if (N / two_dplus1 > 128) {
-            blocks = N / two_dplus1 / threadsPerBlock;
             threadsPerBlock = 128;
+            blocks = N / two_dplus1 / threadsPerBlock;
         } else {
             threadsPerBlock = N/two_dplus1;
             blocks = 1;
@@ -124,8 +124,8 @@ void exclusive_scan(int *input, int N, int *result) {
     for (int two_d = N / 2; two_d >= 1; two_d /= 2) {
         int two_dplus1 = 2 * two_d;
         if (N / two_dplus1 > 128) {
-            blocks = N / two_dplus1 / threadsPerBlock;
             threadsPerBlock = 128;
+            blocks = N / two_dplus1 / threadsPerBlock;
         } else {
             threadsPerBlock = N/two_dplus1;
             blocks = 1;
