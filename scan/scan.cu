@@ -239,18 +239,18 @@ int find_repeats(int *device_input, int length, int *device_output) {
     // must ensure that the results of find_repeats are correct given
     // the actual array length.
     int count = 0;
-    int N = nextPow2(length);
+    int N_round = nextPow2(length);
     int *device_result; // for storing the result of cudaScan
     int *device_count;  // for repeat_kernal counter
 
-    cudaMalloc(&device_result, sizeof(int) * N);
-    cudaMemcpy(device_result, device_input, sizeof(int) * N, cudaMemcpyDeviceToDevice);
+    cudaMalloc(&device_result, sizeof(int) * N_round);
+    cudaMemcpy(device_result, device_input, sizeof(int) * N_round, cudaMemcpyDeviceToDevice);
     cudaMalloc(&device_count, sizeof(int));
     cudaMemcpy(device_count, &count, sizeof(int), cudaMemcpyHostToDevice);
 
-    exclusive_scan(device_input, N, device_result);
-    repeat_kernal<<<1, N>>>(N, device_result, device_count, device_output);
-    cudaCheckError( cudaDeviceSynchronize() ); // error is printed on this line
+    exclusive_scan(device_input, N_round, device_result);
+    repeat_kernal<<<N_round/128, 128>>>(N, device_result, device_count, device_output);
+    // cudaCheckError( cudaDeviceSynchronize() ); // error is printed on this line
 
     cudaMemcpy(&count, device_count, sizeof(int), cudaMemcpyDeviceToHost);
     cudaFree(device_result);
