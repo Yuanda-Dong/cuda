@@ -15,6 +15,23 @@
 #define THREADS_PER_BLOCK 256
 
 
+#define DEBUG
+
+#ifdef DEBUG
+#define cudaCheckError(ans) { cudaAssert((ans), __FILE__, __LINE__); }
+inline void cudaAssert(cudaError_t code, const char *file, int line, bool abort=true)
+{
+   if (code != cudaSuccess) 
+   {
+      fprintf(stderr, "CUDA Error: %s at %s:%d\n", 
+        cudaGetErrorString(code), file, line);
+      if (abort) exit(code);
+   }
+}
+#else
+#define cudaCheckError(ans) ans
+#endif
+
 // helper function to round an integer up to the next power of 2
 static inline int nextPow2(int n) {
     n--;
@@ -99,6 +116,7 @@ void exclusive_scan(int* input, int N, int* result)
         // }
         scan_kernal_up<<<blocks, threadsPerBlock>>>(N, two_d, result);
 
+        cudaCheckError( cudaDeviceSynchronize() ); // error is printed on this line
     }
 
 
@@ -110,6 +128,8 @@ void exclusive_scan(int* input, int N, int* result)
           blocks = N/two_dplus1/threadsPerBlock;
         }
         scan_kernal_down<<<blocks, threadsPerBlock>>>(N, two_d, result);
+
+        cudaCheckError( cudaDeviceSynchronize() ); // error is printed on this line
     }
 
 }
