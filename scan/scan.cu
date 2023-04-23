@@ -251,7 +251,7 @@ int find_repeats(int *device_input, int length, int *device_output) {
     exclusive_scan(device_input, N, device_result);
     repeat_kernal<<<1, N>>>(N, device_result, device_count, device_output);
 
-    cudaMemcpy(&count, device_count, sizeof(int), cudaMemcpyDeviceToDevice);
+    cudaMemcpy(&count, device_count, sizeof(int), cudaMemcpyDeviceToHost);
     cudaFree(device_result);
     cudaFree(device_count);
     return count;
