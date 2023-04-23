@@ -87,9 +87,6 @@ __global__ void scan_kernal_down(int N, int offset, int *input) {
 // "in-place" scan, since the timing harness makes a copy of input and
 // places it in result
 void exclusive_scan(int *input, int N, int *result) {
-
-    // printf("i'm called\n");
-    fprintf(stderr, "This is an error message\n");
     N = nextPow2(N);
     int threadsPerBlock;
     int blocks;
@@ -253,6 +250,7 @@ int find_repeats(int *device_input, int length, int *device_output) {
 
     exclusive_scan(device_input, N, device_result);
     repeat_kernal<<<1, N>>>(N, device_result, device_count, device_output);
+    cudaCheckError( cudaDeviceSynchronize() ); // error is printed on this line
 
     cudaMemcpy(&count, device_count, sizeof(int), cudaMemcpyDeviceToHost);
     cudaFree(device_result);
