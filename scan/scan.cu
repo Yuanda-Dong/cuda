@@ -5,28 +5,26 @@
 
 #include <driver_functions.h>
 
-#include <thrust/scan.h>
-#include <thrust/device_ptr.h>
-#include <thrust/device_malloc.h>
 #include <thrust/device_free.h>
+#include <thrust/device_malloc.h>
+#include <thrust/device_ptr.h>
+#include <thrust/scan.h>
 
 #include "CycleTimer.h"
 
 #define THREADS_PER_BLOCK 256
 
-
 #define DEBUG
 
 #ifdef DEBUG
-#define cudaCheckError(ans) { cudaAssert((ans), __FILE__, __LINE__); }
-inline void cudaAssert(cudaError_t code, const char *file, int line, bool abort=true)
-{
-   if (code != cudaSuccess) 
-   {
-      fprintf(stderr, "CUDA Error: %s at %s:%d\n", 
-        cudaGetErrorString(code), file, line);
-      if (abort) exit(code);
-   }
+#define cudaCheckError(ans)                                                                                                                                                                            \
+    { cudaAssert((ans), __FILE__, __LINE__); }
+inline void cudaAssert(cudaError_t code, const char *file, int line, bool abort = true) {
+    if (code != cudaSuccess) {
+        fprintf(stderr, "CUDA Error: %s at %s:%d\n", cudaGetErrorString(code), file, line);
+        if (abort)
+            exit(code);
+    }
 }
 #else
 #define cudaCheckError(ans) ans
@@ -45,32 +43,32 @@ static inline int nextPow2(int n) {
 }
 
 // scan_kernal
-__global__ void scan_kernal_up(int N, int offset, int* input) {
-    
-  int index = blockIdx.x * blockDim.x + threadIdx.x;
-  int two_times = 2 * offset;
-  int a = (index+1)*two_times -1;
-  int b = index*two_times + offset -1;
-  if (a < N && b < N){
-    input[a] += input[b];
-  }
+__global__ void scan_kernal_up(int N, int offset, int *input) {
+
+    int index = blockIdx.x * blockDim.x + threadIdx.x;
+    int two_times = 2 * offset;
+    int a = (index + 1) * two_times - 1;
+    int b = index * two_times + offset - 1;
+    if (a < N && b < N) {
+        input[a] += input[b];
+    }
 }
 
-__global__ void scan_kernal_down(int N, int offset, int* input) {
-    
-  int index = blockIdx.x * blockDim.x + threadIdx.x;
-  int two_times = 2 * offset;
+__global__ void scan_kernal_down(int N, int offset, int *input) {
 
-  if(offset == N/2){
-    input[N-1] = 0;
-  }
-  int a = (index+1) * two_times -1;
-  int b = index * two_times + offset -1;
-  if (a < N && b < N){
-    int t = input[b];
-    input[b] = input[a];
-    input[a] += t;
-  }
+    int index = blockIdx.x * blockDim.x + threadIdx.x;
+    int two_times = 2 * offset;
+
+    if (offset == N / 2) {
+        input[N - 1] = 0;
+    }
+    int a = (index + 1) * two_times - 1;
+    int b = index * two_times + offset - 1;
+    if (a < N && b < N) {
+        int t = input[b];
+        input[b] = input[a];
+        input[a] += t;
+    }
 }
 
 // exclusive_scan --
@@ -88,12 +86,12 @@ __global__ void scan_kernal_down(int N, int offset, int* input) {
 // Also, as per the comments in cudaScan(), you can implement an
 // "in-place" scan, since the timing harness makes a copy of input and
 // places it in result
-void exclusive_scan(int* input, int N, int* result)
-{
+void exclusive_scan(int *input, int N, int *result) {
 
     N = nextPow2(N);
     printf("N: %d\n", N);
-    int threadsPerBlock = 128;
+    int threadsPerBlock;
+    int blocks;
     // CS149 TODO:
     //
     // Implement your exclusive scan implementation here.  Keep input
@@ -103,12 +101,14 @@ void exclusive_scan(int* input, int N, int* result)
     // to CUDA kernel functions (that you must write) to implement the
     // scan.
 
-    for (int two_d = 1; two_d <= N/2; two_d*=2) {
-        int two_dplus1 = 2*two_d;
-        int blocks = 1;
-        if (N/two_dplus1 > threadsPerBlock){
-          blocks = N/two_dplus1/threadsPerBlock;
-          printf("%d blocks with %d threads\n", blocks, threadsPerBlock);
+    for (int two_d = 1; two_d <= N / 2; two_d *= 2) {
+        int two_dplus1 = 2 * two_d;
+        if (N / two_dplus1 > 128) {
+            blocks = N / two_dplus1 / threadsPerBlock;
+            threadsPerBlock = 128;
+        } else {
+            threadsPerBlock = N/two_dplus1;
+            blocks = 1;
         }
 
         // parallel_for (int i = 0; i < N; i += two_dplus1) {
@@ -116,24 +116,24 @@ void exclusive_scan(int* input, int N, int* result)
         // }
         scan_kernal_up<<<blocks, threadsPerBlock>>>(N, two_d, result);
 
-        cudaCheckError( cudaDeviceSynchronize() ); // error is printed on this line
+        cudaCheckError(cudaDeviceSynchronize()); // error is printed on this line
     }
 
-
     // downsweep phase
-    for (int two_d = N/2; two_d >= 1; two_d /= 2) {
-        int two_dplus1 = 2*two_d;
-        int blocks = 1;
-        if (N/two_dplus1 > threadsPerBlock){
-          blocks = N/two_dplus1/threadsPerBlock;
+    for (int two_d = N / 2; two_d >= 1; two_d /= 2) {
+        int two_dplus1 = 2 * two_d;
+        if (N / two_dplus1 > 128) {
+            blocks = N / two_dplus1 / threadsPerBlock;
+            threadsPerBlock = 128;
+        } else {
+            threadsPerBlock = N/two_dplus1;
+            blocks = 1;
         }
         scan_kernal_down<<<blocks, threadsPerBlock>>>(N, two_d, result);
 
-        cudaCheckError( cudaDeviceSynchronize() ); // error is printed on this line
+        cudaCheckError(cudaDeviceSynchronize()); // error is printed on this line
     }
-
 }
-
 
 //
 // cudaScan --
@@ -142,11 +142,10 @@ void exclusive_scan(int* input, int N, int* result)
 // implementation of scan - it copies the input to the GPU
 // and times the invocation of the exclusive_scan() function
 // above. Students should not modify it.
-double cudaScan(int* inarray, int* end, int* resultarray)
-{
-    int* device_result;
-    int* device_input;
-    int N = end - inarray;  
+double cudaScan(int *inarray, int *end, int *resultarray) {
+    int *device_result;
+    int *device_input;
+    int N = end - inarray;
 
     // This code rounds the arrays provided to exclusive_scan up
     // to a power of 2, but elements after the end of the original
@@ -158,7 +157,7 @@ double cudaScan(int* inarray, int* end, int* resultarray)
     // the simplicity of a power of two only solution.
 
     int rounded_length = nextPow2(end - inarray);
-    
+
     cudaMalloc((void **)&device_result, sizeof(int) * rounded_length);
     cudaMalloc((void **)&device_input, sizeof(int) * rounded_length);
 
@@ -177,13 +176,12 @@ double cudaScan(int* inarray, int* end, int* resultarray)
     // Wait for completion
     cudaDeviceSynchronize();
     double endTime = CycleTimer::currentSeconds();
-       
+
     cudaMemcpy(resultarray, device_result, (end - inarray) * sizeof(int), cudaMemcpyDeviceToHost);
 
     double overallDuration = endTime - startTime;
-    return overallDuration; 
+    return overallDuration;
 }
-
 
 // cudaScanThrust --
 //
@@ -193,12 +191,12 @@ double cudaScan(int* inarray, int* end, int* resultarray)
 //
 // Students are not expected to produce implementations that achieve
 // performance that is competition to the Thrust version, but it is fun to try.
-double cudaScanThrust(int* inarray, int* end, int* resultarray) {
+double cudaScanThrust(int *inarray, int *end, int *resultarray) {
 
     int length = end - inarray;
     thrust::device_ptr<int> d_input = thrust::device_malloc<int>(length);
     thrust::device_ptr<int> d_output = thrust::device_malloc<int>(length);
-    
+
     cudaMemcpy(d_input.get(), inarray, length * sizeof(int), cudaMemcpyHostToDevice);
 
     double startTime = CycleTimer::currentSeconds();
@@ -207,29 +205,27 @@ double cudaScanThrust(int* inarray, int* end, int* resultarray) {
 
     cudaDeviceSynchronize();
     double endTime = CycleTimer::currentSeconds();
-   
+
     cudaMemcpy(resultarray, d_output.get(), length * sizeof(int), cudaMemcpyDeviceToHost);
 
     thrust::device_free(d_input);
     thrust::device_free(d_output);
 
     double overallDuration = endTime - startTime;
-    return overallDuration; 
+    return overallDuration;
 }
 
-
 // repeat_kernal
-__global__ void repeat_kernal(int N, int* input, int* count, int* output) {
-    
-  int index = blockIdx.x * blockDim.x + threadIdx.x;
+__global__ void repeat_kernal(int N, int *input, int *count, int *output) {
 
-  if (index < N-1 ){
-      if ((input[index + 1] - input[index]) == (input[index + 2] - input[index+1])){
-          output[*count] = index;
-          atomicAdd(count, 1);
-      }
-  }
+    int index = blockIdx.x * blockDim.x + threadIdx.x;
 
+    if (index < N - 1) {
+        if ((input[index + 1] - input[index]) == (input[index + 2] - input[index + 1])) {
+            output[*count] = index;
+            atomicAdd(count, 1);
+        }
+    }
 }
 
 // find_repeats --
@@ -238,14 +234,14 @@ __global__ void repeat_kernal(int N, int* input, int* count, int* output) {
 // indices `i` for which `device_input[i] == device_input[i+1]`.
 //
 // Returns the total number of pairs found
-int find_repeats(int* device_input, int length, int* device_output) {
+int find_repeats(int *device_input, int length, int *device_output) {
 
     // CS149 TODO:
     //
     // Implement this function. You will probably want to
     // make use of one or more calls to exclusive_scan(), as well as
     // additional CUDA kernel launches.
-    //    
+    //
     // Note: As in the scan code, the calling code ensures that
     // allocated arrays are a power of 2 in size, so you can use your
     // exclusive_scan function with them. However, your implementation
@@ -253,8 +249,8 @@ int find_repeats(int* device_input, int length, int* device_output) {
     // the actual array length.
     int count = 0;
     int N = nextPow2(length);
-    int* device_result; // for storing the result of cudaScan
-    int* device_count; // for repeat_kernal counter
+    int *device_result; // for storing the result of cudaScan
+    int *device_count;  // for repeat_kernal counter
 
     cudaMalloc(&device_result, sizeof(int) * N);
     cudaMemcpy(device_result, device_input, sizeof(int) * N, cudaMemcpyDeviceToDevice);
@@ -262,14 +258,13 @@ int find_repeats(int* device_input, int length, int* device_output) {
     cudaMemcpy(device_count, &count, sizeof(int), cudaMemcpyHostToDevice);
 
     exclusive_scan(device_input, N, device_result);
-    repeat_kernal<<<1,N>>>(N, device_result, device_count, device_output);
+    repeat_kernal<<<1, N>>>(N, device_result, device_count, device_output);
 
     cudaMemcpy(&count, device_count, sizeof(int), cudaMemcpyDeviceToDevice);
     cudaFree(device_result);
     cudaFree(device_count);
     return count;
 }
-
 
 //
 // cudaFindRepeats --
@@ -280,14 +275,14 @@ double cudaFindRepeats(int *input, int length, int *output, int *output_length) 
     int *device_input;
     int *device_output;
     int rounded_length = nextPow2(length);
-    
+
     cudaMalloc((void **)&device_input, rounded_length * sizeof(int));
     cudaMalloc((void **)&device_output, rounded_length * sizeof(int));
     cudaMemcpy(device_input, input, length * sizeof(int), cudaMemcpyHostToDevice);
 
     cudaDeviceSynchronize();
     double startTime = CycleTimer::currentSeconds();
-    
+
     int result = find_repeats(device_input, length, device_output);
 
     cudaDeviceSynchronize();
@@ -300,29 +295,24 @@ double cudaFindRepeats(int *input, int length, int *output, int *output_length) 
     cudaFree(device_input);
     cudaFree(device_output);
 
-    float duration = endTime - startTime; 
+    float duration = endTime - startTime;
     return duration;
 }
 
-
-
-void printCudaInfo()
-{
+void printCudaInfo() {
     int deviceCount = 0;
     cudaError_t err = cudaGetDeviceCount(&deviceCount);
 
     printf("---------------------------------------------------------\n");
     printf("Found %d CUDA devices\n", deviceCount);
 
-    for (int i=0; i<deviceCount; i++)
-    {
+    for (int i = 0; i < deviceCount; i++) {
         cudaDeviceProp deviceProps;
         cudaGetDeviceProperties(&deviceProps, i);
         printf("Device %d: %s\n", i, deviceProps.name);
         printf("   SMs:        %d\n", deviceProps.multiProcessorCount);
-        printf("   Global mem: %.0f MB\n",
-               static_cast<float>(deviceProps.totalGlobalMem) / (1024 * 1024));
+        printf("   Global mem: %.0f MB\n", static_cast<float>(deviceProps.totalGlobalMem) / (1024 * 1024));
         printf("   CUDA Cap:   %d.%d\n", deviceProps.major, deviceProps.minor);
     }
-    printf("---------------------------------------------------------\n"); 
+    printf("---------------------------------------------------------\n");
 }
