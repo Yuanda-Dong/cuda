@@ -88,7 +88,8 @@ __global__ void scan_kernal_down(int N, int offset, int *input) {
 // places it in result
 void exclusive_scan(int *input, int N, int *result) {
 
-    printf("i'm called\n");
+    // printf("i'm called\n");
+    fprintf(stderr, "This is an error message\n");
     N = nextPow2(N);
     int threadsPerBlock;
     int blocks;
