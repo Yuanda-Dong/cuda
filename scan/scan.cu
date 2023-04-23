@@ -50,7 +50,7 @@ __global__ void scan_kernal_up(int N, int offset, int* input) {
   int index = blockIdx.x * blockDim.x + threadIdx.x;
   int two_times = 2 * offset;
 
-  if ((index+1)*two_times -1 < N && index*two_times + offset -1 < N){
+  if (((index+1)*two_times -1) < N && (index*two_times + offset -1) < N){
     input[(index+1)*two_times -1] += input[index*two_times + offset -1];
   }
 
