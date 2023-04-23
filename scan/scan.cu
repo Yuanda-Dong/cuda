@@ -66,7 +66,6 @@ __global__ void scan_kernal_down(int N, int offset, int* input) {
   }
 
   if (((index+1) * two_times -1) < N && (index * two_times + offset -1) < N){
-    // input[(index+1)*offset -1] += input[index*offset + offset/2 -1];
     int t = input[index * two_times + offset -1];
     input[index * two_times + offset -1] = input[(index+1) * two_times -1];
     input[(index+1) * two_times -1] += t;
@@ -95,7 +94,7 @@ void exclusive_scan(int* input, int N, int* result)
 
     N = nextPow2(N);
     printf("N: %d\n", N);
-    int threadsPerBlock = 32;
+    int threadsPerBlock = 128;
     // CS149 TODO:
     //
     // Implement your exclusive scan implementation here.  Keep input
